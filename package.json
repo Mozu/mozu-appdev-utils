@@ -1,0 +1,23 @@
+{
+  "name": "mozu-appdev-utils",
+  "version": "0.1.0",
+  "description": "Node utilities for interacting with the Mozu AppDev API. File syncing and metadata management.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+http://tfs.corp.volusion.com:8080/tfs/VNext/Prototype/_git/mozu-appdev-utils"
+  },
+  "keywords": [
+    "mozu",
+    "mozuappdev"
+  ],
+  "author": "James Zetlen, Volusion Inc.",
+  "license": "ISC",
+  "dependencies": {
+    "mozu-node-sdk": "^1.15.15052-hotfix2",
+    "when": "^3.7.2"
+  }
+}
