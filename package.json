@@ -1,6 +1,6 @@
 {
   "name": "mozu-appdev-utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Node utilities for interacting with the Mozu AppDev API. File syncing and metadata management.",
   "main": "index.js",
   "scripts": {
