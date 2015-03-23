@@ -52,11 +52,14 @@ function walkMetadataTrees(trees) {
 
 var methods = {
   uploadFile: function(filepath, options, body, mtime) {
-    return this.client.upsertPackageFile({
+    var config = {
       applicationKey: this.appKey,
-      lastModifiedTime: options.noclobber && (mtime || fs.statSync(filepath).mtime.toISOString()),
       filepath: formatPath(filepath)
-    }, {
+    };
+    if (options.noclobber) {
+      config.lastModifiedTime = mtime || fs.statSync(filepath).mtime.toISOString()
+    };
+    return this.client.upsertPackageFile(config, {
       scope: DEV,
       body: body || fs.readFileSync(filepath, 'utf8')
     });
