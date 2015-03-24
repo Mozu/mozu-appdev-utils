@@ -11,14 +11,21 @@ function formatPath(pathstring, sep) {
   return path.join(CURRENT, pathstring).split(path.sep).join(sep || PATHSEP);
 }
 
+function isLastModifiedError(err) {
+  var message = err && (err.message || err.originalError && err.originalError.message);
+  return typeof message === "string" && (message.indexOf('Validation Error: LastModifedTime') === 0);
+}
+
 function createProgressLogger(callback) {
   if (!callback) return function() {};
   return function(r, options) {
     options = options || {};
     var payload = options.before ? {
-      before: r
+      before: r,
+      error: options.error
     } : {
-      after: r
+      after: r,
+      error: options.error
     };
     callback(payload);
     return r;
@@ -69,7 +76,25 @@ var methods = {
       progress(spec, {
         before: true
       });
-      return this.uploadFile(spec.path || spec, spec.options || options, spec.body, spec.mtime).then(progress);
+      var operation = this.uploadFile(spec.path || spec, spec.options || options, spec.body, spec.mtime).then(progress);
+      if (options.noclobber) {
+        return operation.catch(function(err) {
+          if (isLastModifiedError(err)) {
+            progress({
+              path: spec.path || spec,
+              sizeInBytes: 0,
+              type: '<unmodified>'
+            }, {
+              error: true
+            });
+            return err;
+          } else {
+            throw err;
+          }
+        });
+      } else {
+        return operation;
+      }
     }
   }),
   deleteFile: function(filepath) {
@@ -102,12 +127,11 @@ var methods = {
     }.bind(this));
   },
   renameFile: function(filepath, destpath, options) {
-    var config = {
+    return this.client.renamePackageFile({
       applicationKey: this.appKey,
       oldFullPath: formatPath(filepath),
       newFullPath: formatPath(destpath)
-    };
-    return this.client.renamePackageFile(config, {
+    }, {
       scope: DEV
     }).then(function(r) {
       return {
