@@ -71,7 +71,7 @@ var methods = {
     }
     return this.client.upsertPackageFile(config, {
       scope: DEV,
-      body: body || fs.readFileSync(filepath, 'utf8')
+      body: body || fs.readFileSync(filepath)
     });
   },
   uploadFiles: aggregate({
@@ -82,7 +82,7 @@ var methods = {
         if (options.noclobber) {
           return operation.catch(function(err) {
             if (isLastModifiedError(err)) {
-              progress(PH.EventPhases.AFTER, PH.EventPhases.REJECTED, {
+              progress(PH.EventPhases.BEFORE, PH.EventTypes.REJECTED, {
                 path: spec.path || spec,
                 sizeInBytes: 0,
                 type: ''
@@ -106,7 +106,7 @@ var methods = {
         }, {});
         return function(modifiedFiles, filespec) {
           var p = filespec.path || filespec;
-          var fileContents = fs.readFileSync(p, 'utf8');
+          var fileContents = fs.readFileSync(p);
           var isSame = pathToChecksum[path.normalize(p)] === getChecksum(fileContents);
           if (isSame) {
             progress(PH.EventPhases.BEFORE, PH.EventTypes.OMITTED, filespec, 'Developer Center has an identical file. Set the option `ignoreChecksum` to true to override.');
