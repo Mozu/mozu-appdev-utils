@@ -114,7 +114,7 @@ var methods = {
             // we've already read this file from the file system, so let's
             // pass the contents to uploadFile
             filespec.body = fileContents;
-            filespec.mtime = fs.statSync(filepath).mtime.toISOString();
+            filespec.mtime = fs.statSync(p).mtime.toISOString();
             modifiedFiles.push(filespec);
           }
           return modifiedFiles;

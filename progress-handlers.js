@@ -1,3 +1,5 @@
+var path = require('path');
+
 var EventPhases = {
   AFTER: 'after',
   BEFORE: 'before'
