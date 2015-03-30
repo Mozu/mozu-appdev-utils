@@ -2,10 +2,14 @@ var SDK = require('mozu-node-sdk');
 var when = require('when');
 var fs = require('fs');
 var path = require('path');
+var crypto = require('crypto');
+
+var PH = require('./progress-handlers');
 
 var DEV = "DEVELOPER";
 var PATHSEP = "|";
 var CURRENT = "./";
+var FIDDLER_PROXY_URL = 'http://127.0.0.1:8888';
 
 function formatPath(pathstring, sep) {
   return path.join(CURRENT, pathstring).split(path.sep).join(sep || PATHSEP);
@@ -16,27 +20,19 @@ function isLastModifiedError(err) {
   return typeof message === "string" && (message.indexOf('Validation Error: LastModifedTime') === 0);
 }
 
-function createProgressLogger(callback) {
-  if (!callback) return function() {};
-  return function(r, options) {
-    options = options || {};
-    var payload = options.before ? {
-      before: r,
-      error: options.error
-    } : {
-      after: r,
-      error: options.error
-    };
-    callback(payload);
-    return r;
-  };
-}
-
-function createAggregator(createStep) {
+function aggregate(conf) {
   return function(filespecs, options, progressCallback) {
-    var progress = createProgressLogger(progressCallback)
-    var step = createStep(filespecs, options, progress).bind(this);
-    return when.all(filespecs.map(step));
+    var progress = PH.createLogger(progressCallback);
+    var complete = PH.createCompleteHandler(progress);
+    var step = conf.step(options, progress, complete).bind(this);
+    var preprocess = conf.preprocess ? conf.preprocess(filespecs, options, progress).bind(this) : function() { return filespecs; };
+    return this.client.getPackageMetadata({
+      applicationKey: this.appKey
+    }, {
+      scope: DEV
+    }).then(preprocess).then(function(filespecs) {
+      return when.all(filespecs.map(step));
+    });
   }
 }
 
@@ -44,7 +40,7 @@ function createClient(context) {
   var c = SDK.client(context);
   if (process.env.USE_FIDDLER) {
     c.defaultRequestOptions = {
-      proxy: 'http://127.0.0.1:8888',
+      proxy: FIDDLER_PROXY_URL,
       rejectUnauthorized: false
     };
   }
@@ -57,6 +53,13 @@ function walkMetadataTrees(trees) {
   }, []);
 }
 
+// legacy methods to ensure synchronousness
+function getChecksum(fileText) {
+  var hash = crypto.createHash('md5');
+  hash.update(fileText);
+  return hash.digest('hex');
+}
+
 var methods = {
   uploadFile: function(filepath, options, body, mtime) {
     var config = {
@@ -64,37 +67,65 @@ var methods = {
       filepath: formatPath(filepath)
     };
     if (options.noclobber) {
-      config.lastModifiedTime = mtime || fs.statSync(filepath).mtime.toISOString()
-    };
+      config.lastModifiedTime = mtime || fs.statSync(filepath).mtime.toISOString();
+    }
     return this.client.upsertPackageFile(config, {
       scope: DEV,
       body: body || fs.readFileSync(filepath, 'utf8')
     });
   },
-  uploadFiles: createAggregator(function(filespecs, options, progress) {
-    return function(spec) {
-      progress(spec, {
-        before: true
-      });
-      var operation = this.uploadFile(spec.path || spec, spec.options || options, spec.body, spec.mtime).then(progress);
-      if (options.noclobber) {
-        return operation.catch(function(err) {
-          if (isLastModifiedError(err)) {
-            progress({
-              path: spec.path || spec,
-              sizeInBytes: 0,
-              type: '<unmodified>'
-            }, {
-              error: true
-            });
-            return err;
-          } else {
-            throw err;
-          }
-        });
-      } else {
-        return operation;
+  uploadFiles: aggregate({
+    step: function(options, progress, complete) {
+      return function(spec) {
+        progress(PH.EventPhases.BEFORE, PH.EventTypes.BEFORE_UPLOAD, spec);
+        var operation = this.uploadFile(spec.path || spec, spec.options || options, spec.body, spec.mtime).then(complete);
+        if (options.noclobber) {
+          return operation.catch(function(err) {
+            if (isLastModifiedError(err)) {
+              progress(PH.EventPhases.AFTER, PH.EventPhases.REJECTED, {
+                path: spec.path || spec,
+                sizeInBytes: 0,
+                type: ''
+              }, 'Developer Center has a newer copy. Set the option `noclobber` to false to override.');
+              return err;
+            } else {
+              throw err;
+            }
+          });
+        } else {
+          return operation;
+        }
       }
+    },
+    preprocess: function(filespecs, options, progress) {
+
+      function onlyModified(tree) {
+        var pathToChecksum = walkMetadataTrees([tree]).reduce(function(memo, filespec) {
+          memo[path.normalize(filespec.path)] = filespec.checkSum;
+          return memo;
+        }, {});
+        return function(modifiedFiles, filespec) {
+          var p = filespec.path || filespec;
+          var fileContents = fs.readFileSync(p, 'utf8');
+          var isSame = pathToChecksum[path.normalize(p)] === getChecksum(fileContents);
+          if (isSame) {
+            progress(PH.EventPhases.BEFORE, PH.EventTypes.OMITTED, filespec, 'Developer Center has an identical file. Set the option `ignoreChecksum` to true to override.');
+          } else {
+            // we've already read this file from the file system, so let's
+            // pass the contents to uploadFile
+            filespec.body = fileContents;
+            filespec.mtime = fs.statSync(filepath).mtime.toISOString();
+            modifiedFiles.push(filespec);
+          }
+          return modifiedFiles;
+        }
+      }
+
+      return function(metadata) {
+        progress(PH.EventPhases.BEFORE, PH.EventTypes.PREPROCESS, metadata);
+        return options.ignoreChecksum ? filespecs : filespecs.reduce(onlyModified(metadata), []);  
+      };
+
     }
   }),
   deleteFile: function(filepath) {
@@ -109,12 +140,22 @@ var methods = {
       };
     })
   },
-  deleteFiles: createAggregator(function(filespecs, options, progress) {
-    return function(spec) {
-      progress(spec, {
-        before: true
-      });
-      return this.deleteFile(spec.path || spec).then(progress);
+  deleteFiles: aggregate({
+    step: function(options, progress, complete) {
+      return function(spec) {
+        progress(PH.EventPhases.BEFORE, PH.EventTypes.BEFORE_DELETE, spec);
+        return this.deleteFile(spec.path || spec).then(complete);
+      }
+    },
+    preprocess: function(filespecs, options, progress) {
+      return function(metadata) {
+        var files = walkMetadataTrees([metadata]).reduce(function(memo, filespec) {
+          memo[path.normalize(filespec.path)] = filespec;
+        }, {});
+        return filespecs.filter(function(spec) {
+          return !!files[path.normalize(spec.path)];
+        });
+      }
     }
   }),
   deleteAllFiles: function(options, progress) {
@@ -140,27 +181,14 @@ var methods = {
       }
     });
   },
-  renameFiles: createAggregator(function(filespecs, options, progress) {
-    return function(spec) {
-      progress(spec, {
-        before: true
-      });
-      return this.renameFile(spec.oldFullPath, spec.newFullPath, options).then(progress);
+  renameFiles: aggregate({
+    step: function(options, progress, complete) {
+      return function(spec) {
+        progress(PH.EventPhases.BEFORE, PH.EventTypes.BEFORE_RENAME, spec);
+        return this.renameFile(spec.oldFullPath, spec.newFullPath, options).then(complete);
+      }
     }
-  }),
-  preauthenticate: function() {
-    if (this._metadata) {
-      return when(this._metadata);
-    }
-    return this.client.getPackageMetadata({
-      applicationKey: this.appKey
-    }, {
-      scope: DEV
-    }).then(function(metadata) {
-      this._metadata = metadata;
-      return metadata;
-    }.bind(this));
-  }
+  })
 }
 
 module.exports = function(appKey, context) {
