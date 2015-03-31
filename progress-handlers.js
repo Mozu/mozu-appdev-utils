@@ -16,26 +16,26 @@ var EventTypes = {
 
 function identity(x) { return x; }
 
-function ProgressEvent(phase, type, file, reason) {
+function ProgressEvent(phase, type, data, reason) {
   this.phase = phase;
   this.type = type;
-  this.file = file;
-  if (this.file && this.file.path) this.file.path = path.normalize(this.file.path);
+  this.data = data;
+  if (this.data && this.data.path) this.data.path = path.normalize(this.data.path);
   this.reason = reason || '';
 }
 
 ProgressEvent.prototype.toJSON = function() {
   return {
     type: this.type,
-    file: this.file,
+    data: this.data,
     reason: this.reason
   };
 };
 
 function createProgressLogger(callback) {
   if (!callback) return identity;
-  return function(phase, type, file, reason) {
-    return callback(new ProgressEvent(phase, type, file, reason));
+  return function(phase, type, data, reason) {
+    return callback(new ProgressEvent(phase, type, data, reason));
   }
 }
 

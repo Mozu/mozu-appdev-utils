@@ -62,6 +62,9 @@ function getChecksum(fileText) {
 
 var methods = {
   uploadFile: function(filepath, options, body, mtime) {
+    if (body && typeof body === "string") {
+      body = new Buffer(body, 'utf8');
+    }
     var config = {
       applicationKey: this.appKey,
       filepath: formatPath(filepath)
@@ -150,10 +153,15 @@ var methods = {
     preprocess: function(filespecs, options, progress) {
       return function(metadata) {
         var files = walkMetadataTrees([metadata]).reduce(function(memo, filespec) {
-          memo[path.normalize(filespec.path)] = filespec;
+          memo[path.normalize(filespec.path || filespec)] = filespec;
+          return memo;
         }, {});
         return filespecs.filter(function(spec) {
-          return !!files[path.normalize(spec.path)];
+          var exists = !!files[path.normalize(spec.path || spec)]
+          if (!exists) {
+            progress(PH.EventPhases.BEFORE, PH.EventTypes.OMITTED, spec, "the file does not exist in Developer Center and therefore cannot be deleted.");
+          }
+          return exists;
         });
       }
     }
