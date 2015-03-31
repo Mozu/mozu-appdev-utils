@@ -15,7 +15,7 @@
     "mozuappdev"
   ],
   "author": "James Zetlen, Volusion Inc.",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "mozu-node-sdk": "^1.15.15052-hotfix3",
     "when": "^3.7.2"
