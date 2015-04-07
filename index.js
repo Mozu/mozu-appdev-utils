@@ -211,7 +211,7 @@ module.exports = function(appKey, context, plugins) {
       enumerable: true,
       configurable: true,
       writable: true,
-      value: createClient(context)
+      value: createClient(context, plugins)
     }
   });
 };
