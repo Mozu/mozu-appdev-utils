@@ -36,8 +36,8 @@ function aggregate(conf) {
   }
 }
 
-function createClient(context) {
-  var c = SDK.client(context);
+function createClient(context, plugins) {
+  var c = SDK.client(context, plugins);
   if (process.env.USE_FIDDLER) {
     c.defaultRequestOptions = {
       proxy: FIDDLER_PROXY_URL,
@@ -199,7 +199,7 @@ var methods = {
   })
 }
 
-module.exports = function(appKey, context) {
+module.exports = function(appKey, context, plugins) {
   return Object.create(methods, {
     appKey: {
       enumerable: true,
