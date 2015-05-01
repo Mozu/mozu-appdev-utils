@@ -17,7 +17,7 @@
   "author": "James Zetlen, Volusion Inc.",
   "license": "MIT",
   "dependencies": {
-    "mozu-node-sdk": "^1.15.15052-hotfix3",
+    "mozu-node-sdk": "^1.15.15052-hotfix12",
     "when": "^3.7.2"
   }
 }
