@@ -9,7 +9,6 @@ var PH = require('./progress-handlers');
 var DEV = "DEVELOPER";
 var PATHSEP = "|";
 var CURRENT = "./";
-var FIDDLER_PROXY_URL = 'http://127.0.0.1:8888';
 
 function formatPath(pathstring, sep) {
   return path.join(CURRENT, pathstring).split(path.sep).join(sep || PATHSEP);
@@ -38,12 +37,6 @@ function aggregate(conf) {
 
 function createClient(context, plugins) {
   var c = SDK.client(context, plugins);
-  if (process.env.USE_FIDDLER) {
-    c.defaultRequestOptions = {
-      proxy: FIDDLER_PROXY_URL,
-      rejectUnauthorized: false
-    };
-  }
   return c.platform().application();
 }
 
