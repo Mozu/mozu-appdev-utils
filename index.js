@@ -35,8 +35,8 @@ function aggregate(conf) {
   }
 }
 
-function createClient(context, plugins) {
-  var c = SDK.client(context, plugins);
+function createClient(context, extraConfig) {
+  var c = SDK.client(context, extraConfig);
   return c.platform().application();
 }
 
@@ -192,7 +192,7 @@ var methods = {
   })
 }
 
-module.exports = function(appKey, context, plugins) {
+module.exports = function(appKey, context, extraConfig) {
   return Object.create(methods, {
     appKey: {
       enumerable: true,
@@ -204,7 +204,7 @@ module.exports = function(appKey, context, plugins) {
       enumerable: true,
       configurable: true,
       writable: true,
-      value: createClient(context, plugins)
+      value: createClient(context, extraConfig)
     }
   });
 };
