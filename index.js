@@ -1,4 +1,3 @@
-var SDK = require('mozu-node-sdk');
 var when = require('when');
 var fs = require('fs');
 var path = require('path');
@@ -35,9 +34,11 @@ function aggregate(conf) {
   }
 }
 
-function createClient(context, extraConfig) {
-  var c = SDK.client(context, extraConfig);
-  return c.platform().application();
+function createClient(context, config) {
+  config.context = context;
+  config.plugins = config.plugins || [];
+  config.plugins.push(require('mozu-node-sdk/plugins/fiddler-proxy'));
+  return require('mozu-node-sdk/clients/platform/application')(config);
 }
 
 function walkMetadataTrees(trees) {
@@ -204,7 +205,7 @@ module.exports = function(appKey, context, extraConfig) {
       enumerable: true,
       configurable: true,
       writable: true,
-      value: createClient(context, extraConfig)
+      value: createClient(context, extraConfig || {})
     }
   });
 };
