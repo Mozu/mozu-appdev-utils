@@ -1,4 +1,5 @@
 var when = require('when');
+var whenGuard = require('when/guard');
 var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
@@ -29,8 +30,10 @@ function aggregate(conf) {
     }, {
       scope: DEV
     }).then(preprocess).then(function(filespecs) {
-      return when.all(filespecs.map(step));
-    });
+      return when.all(filespecs.map(whenGuard(whenGuard.n(process.env.MOZU_APPDEV_UTILS_CONCURRENCY || 16), step)));
+    }).catch(function(e) {
+      console.error(require('util').inspect(e));
+    })
   }
 }
 
