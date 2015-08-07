@@ -41,6 +41,9 @@ function createClient(context, config) {
   config.context = context;
   config.plugins = config.plugins || [];
   config.plugins.push(require('mozu-node-sdk/plugins/fiddler-proxy'));
+  config.defaultRequestOptions = {
+    timeout: process.env.MOZU_APPDEV_UTILS_TIMEOUT_SECONDS ? Number(process.env.MOZU_APPDEV_UTILS_TIMEOUT_SECONDS) * 1000 : 60000
+  };
   return require('mozu-node-sdk/clients/platform/application')(config);
 }
 
