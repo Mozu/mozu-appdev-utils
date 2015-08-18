@@ -31,9 +31,7 @@ function aggregate(conf) {
       scope: DEV
     }).then(preprocess).then(function(filespecs) {
       return when.all(filespecs.map(whenGuard(whenGuard.n(process.env.MOZU_APPDEV_UTILS_CONCURRENCY || 16), step)));
-    }).catch(function(e) {
-      console.error(require('util').inspect(e));
-    })
+    });
   }
 }
 
