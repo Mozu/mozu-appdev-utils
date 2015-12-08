@@ -25,11 +25,8 @@ function aggregate(conf) {
     var complete = PH.createCompleteHandler(progress);
     var step = conf.step(options, progress, complete).bind(this);
     var preprocess = conf.preprocess ? conf.preprocess(filespecs, options, progress).bind(this) : function() { return filespecs; };
-    return this.client.getPackageMetadata({
-      applicationKey: this.appKey
-    }, {
-      scope: DEV
-    }).then(preprocess).then(function(filespecs) {
+    return this.getMetadata(filespecs)
+    .then(preprocess).then(function(filespecs) {
       return when.all(filespecs.map(whenGuard(whenGuard.n(process.env.MOZU_APPDEV_UTILS_CONCURRENCY || 16), step)));
     });
   }
@@ -45,9 +42,9 @@ function createClient(context, config) {
   return require('mozu-node-sdk/clients/platform/application')(config);
 }
 
-function walkMetadataTrees(trees) {
+function metadataTreeToArray(trees) {
   return trees.reduce(function(files, tree) {
-    return files.concat(tree.files).concat(tree.subFolders.length === 0 ? [] : walkMetadataTrees(tree.subFolders));
+    return files.concat(tree.files).concat(tree.subFolders.length === 0 ? [] : metadataTreeToArray(tree.subFolders));
   }, []);
 }
 
@@ -59,6 +56,31 @@ function getChecksum(fileText) {
 }
 
 var methods = {
+  getMetadata: function(filespecs) {
+    var self = this;
+    var concurrencyLimit = process.env.MOZU_APPDEV_UTILS_CONCURRENCY || 16;
+    if (filespecs && filespecs.length < concurrencyLimit) {
+      return Promise.all(
+        filespecs.map(function(spec) {
+          return self.client.getPackageFileMetadata({
+            applicationKey: self.appKey,
+            filepath: spec.path || spec
+          }, { scope: DEV }).catch(function(notFound) {
+            // not found is ok
+            return null;
+          });
+        })
+      ).then(function(metadata) {
+        return metadata.filter(function(exists) { return !!exists; });
+      });
+    } else {
+      return self.client.getPackageMetadata({
+        applicationKey: self.appKey
+      }, { scope: DEV }).then(function(res) {
+        return metadataTreeToArray([res]);
+      });
+    }
+  },
   uploadFile: function(filepath, options, body, mtime) {
     if (body && typeof body === "string") {
       body = new Buffer(body, 'utf8');
@@ -100,8 +122,8 @@ var methods = {
     },
     preprocess: function(filespecs, options, progress) {
 
-      function onlyModified(tree) {
-        var pathToChecksum = walkMetadataTrees([tree]).reduce(function(memo, filespec) {
+      function onlyModified(filespecs) {
+        var pathToChecksum = filespecs.reduce(function(memo, filespec) {
           memo[path.normalize(filespec.path)] = filespec.checkSum;
           return memo;
         }, {});
@@ -150,7 +172,7 @@ var methods = {
     },
     preprocess: function(filespecs, options, progress) {
       return function(metadata) {
-        var files = walkMetadataTrees([metadata]).reduce(function(memo, filespec) {
+        var files = filespecs.reduce(function(memo, filespec) {
           memo[path.normalize(filespec.path || filespec)] = filespec;
           return memo;
         }, {});
@@ -165,12 +187,9 @@ var methods = {
     }
   }),
   deleteAllFiles: function(options, progress) {
-    return this.client.getPackageMetadata({
-      applicationKey: this.appKey
-    }, {
-      scope: DEV
-    }).then(function(metadata) {
-      return this.deleteFiles(walkMetadataTrees([metadata]), options, progress);
+    return this.getMetadata()
+    .then(function(filespecs) {
+      return this.deleteFiles(filespecs, options, progress);
     }.bind(this));
   },
   renameFile: function(filepath, destpath, options) {
