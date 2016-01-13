@@ -4,20 +4,27 @@
   "description": "Node utilities for interacting with the Mozu AppDev API. File syncing and metadata management.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "ci-build": "npm test",
+    "ci-build-stable": "npm run ci-build",
+    "postci-build-stable": "mozu-validate-npm-package",
+    "test": "echo \"Error: no test specified\"",
+    "cov": "echo \"Error: no coverage specified\""
   },
   "repository": {
     "type": "git",
-    "url": "git+http://tfs.corp.volusion.com:8080/tfs/VNext/Prototype/_git/mozu-appdev-utils"
+    "url": "https://github.com/Mozu/mozu-appdev-utils"
   },
   "keywords": [
     "mozu",
     "mozuappdev"
   ],
-  "author": "James Zetlen, Volusion Inc.",
+  "author": "Volusion, LLC",
   "license": "MIT",
   "dependencies": {
     "mozu-node-sdk": "^2.1.4",
     "when": "^3.7.5"
+  },
+  "devDependencies": {
+    "mozu-validate-npm-package": "^1.1.0"
   }
 }

@@ -9,9 +9,7 @@ A Node library that exposes some convenience methods for common operations on th
 
 ### `appDevUtils(appKey, sdkContext, [sdkPlugins])`
 
-A utility instance requires a "working app" application key and an SDK context object. Each instance can only work with one app at a time. The SDK context object can be omitted if the working directory contains a `mozu.config.json` file that can supply the context.
-
-The utility instance will connect to the Mozu API using the Mozu Node SDK, initialized with the supplied context. The context needs to include the app key and shared secret of a separate application, distinct from the "working app" whose assets it manipulates. Take note: your workflow will require **two app keys**. Create an app in your developer account that you will use for the actual sync. That app needs all Developer and Developer Asset behaviors. You'll supply this app's key and shared secret as part of the context; the actual API calls will be made under this app's claims, even if they are updating the assets of another app.
+A utility instance requires a "working app" application key and an SDK context object. Each instance can only work with one app at a time. The SDK context object can be omitted if the working directory contains a `mozu.config.json` file that can supply the context. The utility instance will connect to the Mozu API using the Mozu Node SDK, initialized with the supplied context.
 
 Optionally, you may supply a third argument consisting of Mozu Node SDK plugins, much like the second argument to the Node SDK `.client()` factory.
 
