@@ -21,8 +21,8 @@
   "author": "Volusion, LLC",
   "license": "MIT",
   "dependencies": {
-    "mozu-node-sdk": "^2.1.4",
-    "when": "^3.7.5"
+    "mozu-node-sdk": "^2.3.4",
+    "when": "^3.7.7"
   },
   "devDependencies": {
     "mozu-validate-npm-package": "^1.1.0"
