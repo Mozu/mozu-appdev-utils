@@ -5,7 +5,7 @@ os:
 sudo: false
 branches:
   except:
-    - /^v[0-9]/
+  - /^v[0-9]/
 env:
   matrix:
   - TRAVIS_NODE_VERSION="4.1"
@@ -18,7 +18,7 @@ before_script:
 - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm
   && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm
   install $TRAVIS_NODE_VERSION
-- npm install -g npm #want latest npm
+- npm install -g npm
 - npm install
 - git config --global user.email "travis-ci-build@volusion.com"
 - git config --global user.name "Travis CI Build"
@@ -28,4 +28,4 @@ script:
 - if [ -n "TRAVIS_TAG" ]; then npm run ci-build-stable; else npm run ci-build; fi
 notifications:
   slack:
-    secure: 1JBhIYVAEGxoylBBOyOzw4ynj+2LUwl42elrWJ/JyR0uHvsLZB8FevSscxXk/lz2ltQD7mvfbPJHcnbvXJDNXmvAsliT0syy/Zz/ELexg5HaiYx6Hg7j5cfcMfl40byeJb2GUvigxNgj5DXA1DyZiesQ0vHKbua8F3HjBauNCVZeV6QGAkibDlvD+qwC6HZnJthgXYFYZZKZiHR2q2cyav/LkYJvvODtqwEa8cIR+ScHS/3MK7EgRYfCJ3YZbO7J5zwMbp0cdXdSR6VzY0jSwNNQr2LhWRCx46Z0V4VBlcPUrcft7Psum2vnbYDMp3TPo/M191iFFNZTyAyRGncNkVqJSBM6ypWKOwe/maH06gmoir+yVKzU0EIhOx9rlh7G6nOgl+Lk75d4IscPGPgt058BFGi0xY5qbbAd2krm9eM4NAcRK0cMeEw6Ln7m1/qXb9I1B9KEVsBhA8ou1pPoh7LtMIhs0SaQ2eLPES0NDRVL3zQ6JPFpycBr5OCA/AzlDiwv4MRbk6KMWygVggraa9Fq1BlptSrOVqEUPQj/0lLn7qfKkQOHAl4ICbznYhkXIz3wpXF7iXrahVd8R79l4gw2bt4xwsZiSVqsFb1XcSMvyBqkcUnxF1qOwTMAIxzlyXVU/27lZHNNJstpef426eIrtBDVGjRtlsz7vbwY9y8=
+    secure: LATqRZJ/Hq2HNqot7ViLqpCPY+X78ihlkBV4S4hHQVcFZiOu4Q9aH46cr2en+c2OKcdX65MkVS+Qv4ud/gr5ZvLjyoFy15dNRJd8vsHLt9NiCEhtd5L36YCIS1SEl/tHln9uGNenCH4oGfTQGAxhMJTYOu+aZ7wjyq1GTO6PvFg1Gi4LfUCavhUIr7a6IB4ZOWGY99xm1IJ5QY4JuFA512CrTR0g7ykQ1WMokwObvLz2JEJmiR2n0ZOmKwJgx5uu0Nn293baw0dGJ5KNn45MC5kAMXPhlUeN+k+b/1+VLyVcdX7YFyXVlljk7Qe+QXRhKGciNmX1+FnEQOCJx7eKFwJBFPDb+kSCpXpnWfsbyqHLfQySWbyU3IrtlDX6bFwE6kpo4565JfPsoUYscMrzGjNMRtANQYy/gzgtBnDgWgssyo0FlRDrFS17HJ2cEkqFDQy5AmVPNoMasJ3VUjqKnWe4xXDWnbt29dWpgZrhOrVA9T6fI2mxtlO2T6dkCZtbbbItCK38DOwQj9Rme5OFaftEHVmegY6y5SgPNPHL4gvkZ+25Pmtbcg36qAS1l10M1tfdUkKGqP+XjQEURM/uJtVxxhxUNvreT5SVj4BOgjZeAmJKocQfQ8FxY32D9fkAzfnJuoacGNucJrGFFZ9hwN2OQw/RPbPLVawsTzS9R1k=
