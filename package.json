@@ -8,7 +8,8 @@
     "ci-build-stable": "npm run ci-build",
     "postci-build-stable": "mozu-validate-npm-package",
     "test": "echo \"Error: no test specified\"",
-    "cov": "echo \"Error: no coverage specified\""
+    "cov": "echo \"Error: no coverage specified\"",
+    "prepublish": "mozu-npm-publish-check"
   },
   "repository": {
     "type": "git",
@@ -21,10 +22,10 @@
   "author": "Volusion, LLC",
   "license": "MIT",
   "dependencies": {
-    "mozu-node-sdk": "^2.3.4",
+    "mozu-node-sdk": "^2.3.6",
     "when": "^3.7.7"
   },
   "devDependencies": {
-    "mozu-validate-npm-package": "^1.1.0"
+    "mozu-validate-npm-package": "^1.2.1"
   }
 }
